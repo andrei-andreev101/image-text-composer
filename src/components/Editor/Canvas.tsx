@@ -134,15 +134,16 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
     if (clickedOnEmpty) onSelectLayer(null);
   };
 
-  const handleTextClick = (id: string, e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (e.evt.ctrlKey || e.evt.metaKey) {
+  const handleTextClick = (id: string, e: Konva.KonvaEventObject<Event>) => {
+    const evt = e.evt as MouseEvent;
+    if (evt.ctrlKey || evt.metaKey) {
       onToggleSelection(id);
     } else {
       onSelectLayer(id);
     }
   };
 
-  const handleTextDragEnd = (id: string, e: Konva.KonvaEventObject<DragEvent>) => {
+  const handleTextDragEnd = (id: string, e: Konva.KonvaEventObject<Event>) => {
     const { x, y } = e.target.position();
     onUpdateLayer(id, { x, y });
   };
@@ -211,8 +212,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
                 }}
                 onTransformEnd={(e) => {
                   // Handle group transform end
-                  const nodes = e.target.nodes();
-                  nodes.forEach((node) => {
+                  if (!trRef.current) return;
+                  const transformer = trRef.current;
+                  const nodes = transformer.nodes();
+                  nodes.forEach((node: Konva.Node) => {
                     const id = node.id();
                     const scaleX = node.scaleX();
                     const scaleY = node.scaleY();
