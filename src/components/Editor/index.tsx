@@ -172,6 +172,10 @@ export default function Editor() {
         fill: "#000000",
         opacity: 1,
         align: "left",
+        shadowColor: "#000000",
+        shadowBlur: 0,
+        shadowOffsetX: 0,
+        shadowOffsetY: 0,
       },
     ], "Add text layer");
     selectLayer(id);

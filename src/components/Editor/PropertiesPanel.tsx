@@ -116,6 +116,50 @@ export function PropertiesPanel({ selectedLayer, onUpdateLayer }: PropertiesPane
             <option value="right">Right</option>
           </select>
         </div>
+
+        <div className="h-px bg-neutral-200 my-2" />
+        <div className="font-medium text-sm">Text Shadow</div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm w-24">Color</label>
+          <input
+            type="color"
+            className="w-10 h-10 border border-neutral-300 rounded"
+            value={selectedLayer.shadowColor}
+            onChange={(e) => onUpdateLayer({ shadowColor: e.target.value })}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm w-24">Blur</label>
+          <input
+            type="number"
+            className="px-2 py-1 rounded border border-neutral-300 w-24"
+            min={0}
+            value={selectedLayer.shadowBlur}
+            onChange={(e) => onUpdateLayer({ shadowBlur: Number(e.target.value || 0) })}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm w-24">Offset X</label>
+          <input
+            type="number"
+            className="px-2 py-1 rounded border border-neutral-300 w-24"
+            value={selectedLayer.shadowOffsetX}
+            onChange={(e) => onUpdateLayer({ shadowOffsetX: Number(e.target.value || 0) })}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm w-24">Offset Y</label>
+          <input
+            type="number"
+            className="px-2 py-1 rounded border border-neutral-300 w-24"
+            value={selectedLayer.shadowOffsetY}
+            onChange={(e) => onUpdateLayer({ shadowOffsetY: Number(e.target.value || 0) })}
+          />
+        </div>
       </div>
     </div>
   );

@@ -22,6 +22,10 @@ export type TextLayer = {
   fill: string;
   opacity: number;
   align: TextAlign;
+  shadowColor: string;
+  shadowBlur: number;
+  shadowOffsetX: number;
+  shadowOffsetY: number;
 };
 
 export type ClientRect = {

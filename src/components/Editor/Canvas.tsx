@@ -78,6 +78,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
           rotation: layer.rotation,
           scaleX: layer.scaleX,
           scaleY: layer.scaleY,
+          shadowColor: layer.shadowColor,
+          shadowBlur: layer.shadowBlur,
+          shadowOffsetX: layer.shadowOffsetX,
+          shadowOffsetY: layer.shadowOffsetY,
         });
         tempLayer.add(tempText);
       });
@@ -185,6 +189,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
                   rotation={t.rotation}
                   scaleX={t.scaleX}
                   scaleY={t.scaleY}
+                  shadowColor={t.shadowColor}
+                  shadowBlur={t.shadowBlur}
+                  shadowOffsetX={t.shadowOffsetX}
+                  shadowOffsetY={t.shadowOffsetY}
                   onClick={(e) => handleTextClick(t.id, e)}
                   onTap={(e) => handleTextClick(t.id, e)}
                   onDblClick={() => onTextDblClick(t.id)}
