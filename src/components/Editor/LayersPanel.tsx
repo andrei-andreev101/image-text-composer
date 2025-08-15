@@ -3,12 +3,13 @@ import type { TextLayer } from "@/types/editor";
 
 interface LayersPanelProps {
   layers: TextLayer[];
-  selectedId: string | null;
-  onSelectLayer: (id: string) => void;
+  selectedIds: Set<string>;
+  onSelectLayer: (id: string | null) => void;
+  onToggleSelection: (id: string) => void;
   onReorderLayers: (fromIndex: number, toIndex: number) => void;
 }
 
-export function LayersPanel({ layers, selectedId, onSelectLayer, onReorderLayers }: LayersPanelProps) {
+export function LayersPanel({ layers, selectedIds, onSelectLayer, onToggleSelection, onReorderLayers }: LayersPanelProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
@@ -46,7 +47,14 @@ export function LayersPanel({ layers, selectedId, onSelectLayer, onReorderLayers
 
   return (
     <div className="border border-neutral-200 rounded p-3 overflow-auto">
-      <div className="font-medium mb-2">Layers</div>
+      <div className="font-medium mb-2 flex items-center justify-between">
+        <span>Layers</span>
+        {selectedIds.size > 0 && (
+          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+            {selectedIds.size} selected
+          </span>
+        )}
+      </div>
       <div className="space-y-1">
         {layers.map((layer, index) => (
           <div
@@ -59,14 +67,20 @@ export function LayersPanel({ layers, selectedId, onSelectLayer, onReorderLayers
             onDragEnd={handleDragEnd}
             className={`
               flex items-center gap-2 p-2 rounded cursor-pointer transition-colors
-              ${selectedId === layer.id 
+              ${selectedIds.has(layer.id) 
                 ? "bg-blue-100 border border-blue-300" 
                 : "bg-neutral-50 border border-transparent hover:bg-neutral-100"
               }
               ${draggedIndex === index ? "opacity-50" : ""}
               ${dragOverIndex === index && draggedIndex !== index ? "border-dashed border-blue-400 bg-blue-50" : ""}
             `}
-            onClick={() => onSelectLayer(layer.id)}
+            onClick={(e) => {
+              if (e.ctrlKey || e.metaKey) {
+                onToggleSelection(layer.id);
+              } else {
+                onSelectLayer(layer.id);
+              }
+            }}
           >
             <div className="w-4 h-4 flex-shrink-0">
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-neutral-400">

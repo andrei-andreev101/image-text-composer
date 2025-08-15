@@ -6,11 +6,12 @@ import type { TextLayer, EditorImage } from "@/types/editor";
 interface CanvasProps {
   background: EditorImage;
   layers: TextLayer[];
-  selectedId: string | null;
+  selectedIds: Set<string>;
   editingId: string | null;
   stageSize: { width: number; height: number };
   stageScale: number;
   onSelectLayer: (id: string | null) => void;
+  onToggleSelection: (id: string) => void;
   onUpdateLayer: (id: string, updates: Partial<TextLayer>) => void;
   onTextDblClick: (id: string) => void;
 }
@@ -22,11 +23,12 @@ export interface CanvasRef {
 export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
   background,
   layers,
-  selectedId,
+  selectedIds,
   editingId,
   stageSize,
   stageScale,
   onSelectLayer,
+  onToggleSelection,
   onUpdateLayer,
   onTextDblClick,
 }, ref) => {
@@ -106,24 +108,34 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
   useEffect(() => {
     if (!trRef.current) return;
     const transformer = trRef.current;
-    const node = stageRef.current?.findOne(`#${selectedId || ""}`) as Konva.Node | undefined;
-
-    if (node) {
-      transformer.nodes([node]);
-      transformer.getLayer()?.batchDraw();
-    } else {
+    
+    if (selectedIds.size === 0) {
       transformer.nodes([]);
       transformer.getLayer()?.batchDraw();
+      return;
     }
-  }, [selectedId, layers]);
+
+    const nodes = Array.from(selectedIds).map(id => 
+      stageRef.current?.findOne(`#${id}`) as Konva.Node
+    ).filter(Boolean);
+
+    if (nodes.length > 0) {
+      transformer.nodes(nodes);
+      transformer.getLayer()?.batchDraw();
+    }
+  }, [selectedIds, layers]);
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const clickedOnEmpty = e.target === e.target.getStage();
     if (clickedOnEmpty) onSelectLayer(null);
   };
 
-  const handleTextClick = (id: string) => {
-    onSelectLayer(id);
+  const handleTextClick = (id: string, e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (e.evt.ctrlKey || e.evt.metaKey) {
+      onToggleSelection(id);
+    } else {
+      onSelectLayer(id);
+    }
   };
 
   const handleTextDragEnd = (id: string, e: Konva.KonvaEventObject<DragEvent>) => {
@@ -131,23 +143,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
     onUpdateLayer(id, { x, y });
   };
 
-  const handleTextTransformEnd = (id: string, e: Konva.KonvaEventObject<Event>) => {
-    const node = e.target as Konva.Text;
-    const scaleX = node.scaleX();
-    const rotation = node.rotation();
 
-    const newWidth = Math.max(20, node.width() * scaleX);
-
-    node.scaleX(1);
-    node.scaleY(1);
-
-    onUpdateLayer(id, {
-      scaleX: 1,
-      scaleY: 1,
-      rotation,
-      width: newWidth,
-    });
-  };
 
   return (
     <div className="w-full h-full relative">
@@ -189,11 +185,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
                   rotation={t.rotation}
                   scaleX={t.scaleX}
                   scaleY={t.scaleY}
-                  onClick={() => handleTextClick(t.id)}
-                  onTap={() => handleTextClick(t.id)}
+                  onClick={(e) => handleTextClick(t.id, e)}
+                  onTap={(e) => handleTextClick(t.id, e)}
                   onDblClick={() => onTextDblClick(t.id)}
                   onDragEnd={(e) => handleTextDragEnd(t.id, e)}
-                  onTransformEnd={(e) => handleTextTransformEnd(t.id, e)}
                   visible={editingId !== t.id}
                 />
               ))}
@@ -201,10 +196,45 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
               <Transformer
                 ref={trRef}
                 rotateEnabled={true}
-                enabledAnchors={["middle-left", "middle-right"]}
+                enabledAnchors={selectedIds.size === 1 ? ["middle-left", "middle-right"] : undefined}
                 boundBoxFunc={(oldBox, newBox) => {
                   if (newBox.width < 20) return oldBox;
                   return newBox;
+                }}
+                onTransformEnd={(e) => {
+                  // Handle group transform end
+                  const nodes = e.target.nodes();
+                  nodes.forEach((node) => {
+                    const id = node.id();
+                    const scaleX = node.scaleX();
+                    const scaleY = node.scaleY();
+                    const rotation = node.rotation();
+                    const { x, y } = node.position();
+
+                    if (selectedIds.size === 1) {
+                      // Single selection - update width for text
+                      const newWidth = Math.max(20, node.width() * scaleX);
+                      node.scaleX(1);
+                      node.scaleY(1);
+                      onUpdateLayer(id, {
+                        scaleX: 1,
+                        scaleY: 1,
+                        rotation,
+                        width: newWidth,
+                        x,
+                        y,
+                      });
+                    } else {
+                      // Multi-selection - just update position and scale
+                      onUpdateLayer(id, {
+                        scaleX,
+                        scaleY,
+                        rotation,
+                        x,
+                        y,
+                      });
+                    }
+                  });
                 }}
               />
             </Layer>

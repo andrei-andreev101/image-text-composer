@@ -7,6 +7,7 @@ A web-based PNG text editor built with Next.js, React, and Konva.js. This applic
 - **Image Upload**: Upload PNG images as backgrounds
 - **Text Layers**: Add, edit, and style text layers
 - **Layer Management**: Reorder, move, and delete layers
+- **Multi-Select**: Select multiple layers and transform them as a group
 - **History**: Full undo/redo functionality with keyboard shortcuts
 - **Autosave**: Automatically save your design to browser's localStorage
 - **Reset**: Clear all data and return to blank state
@@ -23,6 +24,18 @@ The editor automatically saves your current design to the browser's localStorage
 - **Visual Feedback**: Toast notifications confirm when autosave occurs
 
 **Note**: Due to browser security restrictions, background images are not saved with the design. You'll need to re-upload your background image after restoring, but all text layers and their properties will be preserved.
+
+### Multi-Select Feature
+
+The editor supports selecting multiple text layers and transforming them as a group:
+
+- **Multi-Selection**: Hold Ctrl/Cmd and click to add/remove layers from selection
+- **Group Transforms**: Move, scale, and rotate multiple layers together
+- **Visual Feedback**: Selected layers are highlighted in the layers panel
+- **Keyboard Shortcuts**: 
+  - `Ctrl/Cmd + A`: Select all layers
+  - `Escape`: Clear selection
+- **Bulk Operations**: Delete multiple selected layers at once
 
 ### Reset Feature
 

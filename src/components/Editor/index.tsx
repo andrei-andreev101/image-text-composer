@@ -21,8 +21,41 @@ export default function Editor() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const background = useImageObject(imageUrl);
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Helper functions for selection management
+  const selectLayer = useCallback((id: string | null) => {
+    if (id === null) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set([id]));
+    }
+  }, []);
+
+  const toggleLayerSelection = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const addToSelection = useCallback((id: string) => {
+    setSelectedIds(prev => new Set([...prev, id]));
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const getSelectedId = useCallback(() => {
+    return Array.from(selectedIds)[0] || null;
+  }, [selectedIds]);
   
   const {
     value: layers,
@@ -37,8 +70,11 @@ export default function Editor() {
   } = useHistory<TextLayer[]>([], 20);
 
   const selectedLayer = useMemo(
-    () => layers.find((l) => l.id === selectedId) || null,
-    [layers, selectedId]
+    () => {
+      const selectedId = Array.from(selectedIds)[0];
+      return layers.find((l) => l.id === selectedId) || null;
+    },
+    [layers, selectedIds]
   );
 
   const [stageScale, setStageScale] = useState(1);
@@ -138,14 +174,14 @@ export default function Editor() {
         align: "left",
       },
     ], "Add text layer");
-    setSelectedId(id);
-  }, [background.width, background.height, setLayersWithHistory]);
+    selectLayer(id);
+  }, [background.width, background.height, setLayersWithHistory, selectLayer]);
 
   const removeSelected = useCallback(() => {
-    if (!selectedId) return;
-    setLayersWithHistory((prev) => prev.filter((l) => l.id !== selectedId), "Delete layer");
-    setSelectedId(null);
-  }, [selectedId, setLayersWithHistory]);
+    if (selectedIds.size === 0) return;
+    setLayersWithHistory((prev) => prev.filter((l) => !selectedIds.has(l.id)), "Delete layers");
+    clearSelection();
+  }, [selectedIds, setLayersWithHistory, clearSelection]);
 
   const moveLayer = useCallback((id: string, dir: "up" | "down" | "top" | "bottom") => {
     setLayersWithHistory((prev) => {
@@ -171,13 +207,13 @@ export default function Editor() {
   }, [setLayersWithHistory]);
 
   const exportPNG = useCallback(async () => {
-    setSelectedId(null);
+    clearSelection();
     setTimeout(() => {
       if (canvasRef.current) {
         canvasRef.current.exportPNG();
       }
     });
-  }, []);
+  }, [clearSelection]);
 
   const onTextDblClick = useCallback((id: string) => {
     const layerData = layers.find((l) => l.id === id);
@@ -228,6 +264,14 @@ export default function Editor() {
     setLayersWithHistory((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)), "Update layer");
   }, [setLayersWithHistory]);
 
+  // Update multiple layers at once (for group transforms)
+  const updateMultipleLayers = useCallback((updates: Partial<TextLayer>) => {
+    setLayersWithHistory((prev) => 
+      prev.map((l) => selectedIds.has(l.id) ? { ...l, ...updates } : l), 
+      "Update multiple layers"
+    );
+  }, [selectedIds, setLayersWithHistory]);
+
   // Reset editor to blank state
   const resetEditor = useCallback(() => {
     setShowResetConfirm(true);
@@ -239,7 +283,7 @@ export default function Editor() {
     setLayersWithHistory([], "Reset editor");
     
     // Clear selected and editing states
-    setSelectedId(null);
+    clearSelection();
     setEditingId(null);
     
     // Clear background image
@@ -262,7 +306,7 @@ export default function Editor() {
     setToastMessage("Editor reset to blank state");
     setToastType('info');
     setShowToast(true);
-  }, [setLayersWithHistory, clearAutosave]);
+  }, [setLayersWithHistory, clearAutosave, clearSelection]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -281,13 +325,21 @@ export default function Editor() {
             e.preventDefault();
             redo();
             break;
+          case 'a':
+            e.preventDefault();
+            // Select all layers
+            setSelectedIds(new Set(layers.map(l => l.id)));
+            break;
         }
+      } else if (e.key === 'Escape') {
+        // Clear selection
+        clearSelection();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, layers, clearSelection]);
 
   return (
     <div className="w-full h-[100dvh] grid grid-rows-[auto_auto_1fr] gap-3 p-4 select-none">
@@ -304,7 +356,7 @@ export default function Editor() {
         exportPNG={exportPNG}
         clearAutosave={clearAutosave}
         resetEditor={resetEditor}
-        selectedId={selectedId}
+        selectedId={getSelectedId()}
         backgroundElement={background.element}
         canUndo={canUndo}
         canRedo={canRedo}
@@ -316,8 +368,9 @@ export default function Editor() {
         <div className="flex flex-col gap-4 w-xs">
           <LayersPanel
             layers={layers}
-            selectedId={selectedId}
-            onSelectLayer={setSelectedId}
+            selectedIds={selectedIds}
+            onSelectLayer={selectLayer}
+            onToggleSelection={toggleLayerSelection}
             onReorderLayers={reorderLayers}
           />
           
@@ -337,11 +390,12 @@ export default function Editor() {
             ref={canvasRef}
             background={background}
             layers={layers}
-            selectedId={selectedId}
+            selectedIds={selectedIds}
             editingId={editingId}
             stageSize={stageSize}
             stageScale={stageScale}
-            onSelectLayer={setSelectedId}
+            onSelectLayer={selectLayer}
+            onToggleSelection={toggleLayerSelection}
             onUpdateLayer={updateLayer}
             onTextDblClick={onTextDblClick}
           />
@@ -349,7 +403,10 @@ export default function Editor() {
 
         <PropertiesPanel
           selectedLayer={selectedLayer}
-          onUpdateLayer={(updates) => selectedId && updateLayer(selectedId, updates)}
+          onUpdateLayer={(updates) => {
+            const selectedId = getSelectedId();
+            if (selectedId) updateLayer(selectedId, updates);
+          }}
         />
       </div>
       
