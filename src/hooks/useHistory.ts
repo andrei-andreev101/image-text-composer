@@ -51,18 +51,16 @@ export function useHistory<T>(initialValue: T, capacity: number = 20) {
   }, [present, capacity]);
 
   const jumpTo = useCallback((index: number) => {
-    // Build full timeline and re-slice into past/present/future
     setPast((prevPast) => {
       let timeline: HistoryEntry<T>[] = [...prevPast, present];
       let futureSnapshot: HistoryEntry<T>[] = [];
-      // We need a snapshot of current future; retrieve via functional updater below
       setFuture((prevFuture) => {
         timeline = [...timeline, ...prevFuture];
-        return prevFuture; // no change here; we'll set later
+        return prevFuture;
       });
 
       if (index < 0 || index >= timeline.length) {
-        return prevPast; // ignore invalid jump
+        return prevPast;
       }
       const newPast = timeline.slice(0, index);
       const newPresent = timeline[index];
@@ -77,7 +75,7 @@ export function useHistory<T>(initialValue: T, capacity: number = 20) {
   const canRedo = future.length > 0;
 
   const timeline = useMemo(() => [...past, present, ...future], [past, present, future]);
-  const pointer = past.length; // index in timeline of present
+  const pointer = past.length;
 
   return {
     value: present.value,

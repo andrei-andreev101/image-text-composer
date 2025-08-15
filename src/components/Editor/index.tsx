@@ -24,7 +24,6 @@ export default function Editor() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Helper functions for selection management
   const selectLayer = useCallback((id: string | null) => {
     if (id === null) {
       setSelectedIds(new Set());
@@ -43,10 +42,6 @@ export default function Editor() {
       }
       return newSet;
     });
-  }, []);
-
-  const addToSelection = useCallback((id: string) => {
-    setSelectedIds(prev => new Set([...prev, id]));
   }, []);
 
   const clearSelection = useCallback(() => {
@@ -84,7 +79,6 @@ export default function Editor() {
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning' | 'error'>('success');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // Autosave functionality
   const { loadFromStorage, clearAutosave } = useAutosave(
     layers,
     imageUrl,
@@ -94,29 +88,20 @@ export default function Editor() {
       setToastMessage("Design autosaved to browser storage");
       setToastType('success');
       setShowToast(true);
-    } // Show toast when autosave happens
+    }
   );
 
-  // Restore from autosave on component mount
   useEffect(() => {
     const savedData = loadFromStorage();
     if (savedData) {
-      // Restore layers
       setLayersWithHistory(savedData.layers, "Restore from autosave");
-      
-      // Note: We don't restore the image URL as it might be a blob URL that's no longer valid
-      // The user will need to re-upload their image, but all text layers will be preserved
-      
-      // Restore stage settings
       setStageSize(savedData.stageSize);
       setStageScale(savedData.stageScale);
-      
-      // Show a notification if there was a saved image
       if (savedData.hasImage) {
         console.log('Autosave: Design restored. Please re-upload your background image to see the complete design.');
       }
     }
-  }, []); // Only run on mount
+  }, []);
 
   useEffect(() => {
     function fit() {
@@ -268,51 +253,28 @@ export default function Editor() {
     setLayersWithHistory((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)), "Update layer");
   }, [setLayersWithHistory]);
 
-  // Update multiple layers at once (for group transforms)
-  const updateMultipleLayers = useCallback((updates: Partial<TextLayer>) => {
-    setLayersWithHistory((prev) => 
-      prev.map((l) => selectedIds.has(l.id) ? { ...l, ...updates } : l), 
-      "Update multiple layers"
-    );
-  }, [selectedIds, setLayersWithHistory]);
-
-  // Reset editor to blank state
   const resetEditor = useCallback(() => {
     setShowResetConfirm(true);
   }, []);
 
-  // Actually perform the reset
   const performReset = useCallback(() => {
-    // Clear all layers
-    setLayersWithHistory([], "Reset editor");
-    
-    // Clear selected and editing states
+    setLayersWithHistory([], "Reset editor");    
     clearSelection();
-    setEditingId(null);
-    
-    // Clear background image
+    setEditingId(null);    
     setImageUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return null;
     });
     
-    // Reset stage to default size
     setStageSize({ width: 900, height: 600 });
     setStageScale(1);
-    
-    // Clear autosave data
     clearAutosave();
-    
-    // Close confirmation dialog
-    setShowResetConfirm(false);
-    
-    // Show reset confirmation toast
+    setShowResetConfirm(false);    
     setToastMessage("Editor reset to blank state");
     setToastType('info');
     setShowToast(true);
   }, [setLayersWithHistory, clearAutosave, clearSelection]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
@@ -331,12 +293,10 @@ export default function Editor() {
             break;
           case 'a':
             e.preventDefault();
-            // Select all layers
             setSelectedIds(new Set(layers.map(l => l.id)));
             break;
         }
       } else if (e.key === 'Escape') {
-        // Clear selection
         clearSelection();
       }
     };

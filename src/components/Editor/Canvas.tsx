@@ -40,18 +40,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
     exportPNG: () => {
       if (!stageRef.current || !background.element) return;
       
-      // Create a temporary stage for export at original dimensions
       const tempStage = new Konva.Stage({
         container: document.createElement('div'),
         width: background.width,
         height: background.height,
       });
       
-      // Create a temporary layer
       const tempLayer = new Konva.Layer();
       tempStage.add(tempLayer);
       
-      // Add background image at original size
       const tempImage = new Konva.Image({
         image: background.element,
         width: background.width,
@@ -61,7 +58,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
       });
       tempLayer.add(tempImage);
       
-      // Add text layers at original scale positions
       layers.forEach((layer) => {
         const tempText = new Konva.Text({
           text: layer.text,
@@ -86,20 +82,16 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
         tempLayer.add(tempText);
       });
       
-      // Draw the temporary stage
       tempLayer.draw();
       
-      // Export at original dimensions
       const uri = tempStage.toDataURL({
         pixelRatio: 1,
         width: background.width,
         height: background.height
       });
       
-      // Clean up temporary stage
       tempStage.destroy();
       
-      // Download the image
       const link = document.createElement("a");
       link.download = "design.png";
       link.href = uri;
@@ -147,8 +139,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
     const { x, y } = e.target.position();
     onUpdateLayer(id, { x, y });
   };
-
-
 
   return (
     <div className="w-full h-full relative">
@@ -211,7 +201,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
                   return newBox;
                 }}
                 onTransformEnd={(e) => {
-                  // Handle group transform end
                   if (!trRef.current) return;
                   const transformer = trRef.current;
                   const nodes = transformer.nodes();
@@ -223,7 +212,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
                     const { x, y } = node.position();
 
                     if (selectedIds.size === 1) {
-                      // Single selection - update width for text
                       const newWidth = Math.max(20, node.width() * scaleX);
                       node.scaleX(1);
                       node.scaleY(1);
@@ -236,7 +224,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({
                         y,
                       });
                     } else {
-                      // Multi-selection - just update position and scale
                       onUpdateLayer(id, {
                         scaleX,
                         scaleY,

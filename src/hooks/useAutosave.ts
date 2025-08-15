@@ -7,11 +7,11 @@ export type AutosaveData = {
   stageSize: { width: number; height: number };
   stageScale: number;
   timestamp: number;
-  hasImage: boolean; // Track if there was an image, but don't save the URL
+  hasImage: boolean;
 };
 
 const AUTOSAVE_KEY = 'png-editor-autosave';
-const AUTOSAVE_DELAY = 2000; // 2 seconds
+const AUTOSAVE_DELAY = 2000;
 
 export function useAutosave(
   layers: TextLayer[],
@@ -22,7 +22,6 @@ export function useAutosave(
 ) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Save to localStorage
   const saveToStorage = (data: AutosaveData) => {
     try {
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
@@ -32,7 +31,6 @@ export function useAutosave(
     }
   };
 
-  // Load from localStorage
   const loadFromStorage = (): AutosaveData | null => {
     try {
       const saved = localStorage.getItem(AUTOSAVE_KEY);
@@ -47,7 +45,6 @@ export function useAutosave(
     return null;
   };
 
-  // Clear autosave data
   const clearAutosave = () => {
     try {
       localStorage.removeItem(AUTOSAVE_KEY);
@@ -57,7 +54,6 @@ export function useAutosave(
     }
   };
 
-  // Debounced autosave
   useEffect(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -66,14 +62,13 @@ export function useAutosave(
     timeoutRef.current = setTimeout(() => {
       const data: AutosaveData = {
         layers,
-        imageUrl: null, // Don't save the actual URL as it might be a blob URL
-        stageSize,
+        imageUrl: null,        stageSize,
         stageScale,
         timestamp: Date.now(),
-        hasImage: !!imageUrl, // Track if there was an image
+        hasImage: !!imageUrl,
       };
       saveToStorage(data);
-      onAutosave?.(); // Call the callback if provided
+      onAutosave?.();
     }, AUTOSAVE_DELAY);
 
     return () => {
