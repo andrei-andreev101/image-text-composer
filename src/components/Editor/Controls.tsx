@@ -1,7 +1,7 @@
 import React from "react";
 
 interface ControlsProps {
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  fileInputRef: React.RefObject<HTMLInputElement>;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   addTextLayer: () => void;
   removeSelected: () => void;
