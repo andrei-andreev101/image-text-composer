@@ -9,6 +9,10 @@ interface ControlsProps {
   exportPNG: () => void;
   selectedId: string | null;
   backgroundElement: HTMLImageElement | null;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
 export function Controls({
@@ -18,7 +22,11 @@ export function Controls({
   removeSelected,
   exportPNG,
   selectedId,
-  backgroundElement
+  backgroundElement,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo
 }: ControlsProps) {
   return (
     <div className="flex w-full gap-3 items-center">
@@ -51,6 +59,26 @@ export function Controls({
         disabled={!selectedId}
       >
         Delete Selected
+      </button>
+      
+      <div className="h-6 w-px bg-neutral-300" />
+      
+      <button
+        onClick={onUndo}
+        disabled={!canUndo}
+        className="px-3 py-2 rounded bg-neutral-600 text-white disabled:opacity-50"
+        title="Undo (Ctrl+Z)"
+      >
+        ↶ Undo
+      </button>
+      
+      <button
+        onClick={onRedo}
+        disabled={!canRedo}
+        className="px-3 py-2 rounded bg-neutral-600 text-white disabled:opacity-50"
+        title="Redo (Ctrl+Y)"
+      >
+        ↷ Redo
       </button>
       
       <div className="h-6 w-px bg-neutral-300" />

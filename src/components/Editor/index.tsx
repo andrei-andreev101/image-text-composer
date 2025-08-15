@@ -3,11 +3,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { nanoid } from "nanoid";
 import { useImageObject } from "@/hooks/useImageObject";
+import { useHistory } from "@/hooks/useHistory";
 import type { TextLayer } from "@/types/editor";
 import { Controls } from "./Controls";
 import { LayersPanel } from "./LayersPanel";
 import { Canvas, type CanvasRef } from "./Canvas";
 import { PropertiesPanel } from "./PropertiesPanel";
+import { HistoryPanel } from "./HistoryPanel";
 
 export default function Editor() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -16,9 +18,20 @@ export default function Editor() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const background = useImageObject(imageUrl);
 
-  const [layers, setLayers] = useState<TextLayer[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  const {
+    value: layers,
+    set: setLayersWithHistory,
+    undo,
+    redo,
+    jumpTo,
+    canUndo,
+    canRedo,
+    timeline,
+    pointer,
+  } = useHistory<TextLayer[]>([], 20);
 
   const selectedLayer = useMemo(
     () => layers.find((l) => l.id === selectedId) || null,
@@ -64,7 +77,7 @@ export default function Editor() {
 
   const addTextLayer = useCallback(() => {
     const id = nanoid();
-    setLayers((prev) => [
+    setLayersWithHistory((prev) => [
       ...prev,
       {
         id,
@@ -83,18 +96,18 @@ export default function Editor() {
         opacity: 1,
         align: "left",
       },
-    ]);
+    ], "Add text layer");
     setSelectedId(id);
-  }, [background.width, background.height]);
+  }, [background.width, background.height, setLayersWithHistory]);
 
   const removeSelected = useCallback(() => {
     if (!selectedId) return;
-    setLayers((prev) => prev.filter((l) => l.id !== selectedId));
+    setLayersWithHistory((prev) => prev.filter((l) => l.id !== selectedId), "Delete layer");
     setSelectedId(null);
-  }, [selectedId]);
+  }, [selectedId, setLayersWithHistory]);
 
   const moveLayer = useCallback((id: string, dir: "up" | "down" | "top" | "bottom") => {
-    setLayers((prev) => {
+    setLayersWithHistory((prev) => {
       const index = prev.findIndex((l) => l.id === id);
       if (index === -1) return prev;
       const copy = [...prev];
@@ -104,17 +117,17 @@ export default function Editor() {
       if (dir === "top") copy.push(layer);
       if (dir === "bottom") copy.unshift(layer);
       return copy;
-    });
-  }, []);
+    }, `Move layer ${dir}`);
+  }, [setLayersWithHistory]);
 
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
-    setLayers((prev) => {
+    setLayersWithHistory((prev) => {
       const copy = [...prev];
       const [movedLayer] = copy.splice(fromIndex, 1);
       copy.splice(toIndex, 0, movedLayer);
       return copy;
-    });
-  }, []);
+    }, "Reorder layers");
+  }, [setLayersWithHistory]);
 
   const exportPNG = useCallback(async () => {
     setSelectedId(null);
@@ -154,7 +167,7 @@ export default function Editor() {
 
     function commit() {
       const value = area.value;
-      setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, text: value } : l)));
+      setLayersWithHistory((prev) => prev.map((l) => (l.id === id ? { ...l, text: value } : l)), "Edit text");
       setEditingId(null);
       document.body.removeChild(area);
     }
@@ -171,8 +184,33 @@ export default function Editor() {
   }, [layers]);
 
   const updateLayer = useCallback((id: string, updates: Partial<TextLayer>) => {
-    setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)));
-  }, []);
+    setLayersWithHistory((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)), "Update layer");
+  }, [setLayersWithHistory]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'z':
+            e.preventDefault();
+            if (e.shiftKey) {
+              redo();
+            } else {
+              undo();
+            }
+            break;
+          case 'y':
+            e.preventDefault();
+            redo();
+            break;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
 
   return (
     <div className="w-full h-[100dvh] grid grid-rows-[auto_auto_1fr] gap-3 p-4 select-none">
@@ -189,15 +227,31 @@ export default function Editor() {
         exportPNG={exportPNG}
         selectedId={selectedId}
         backgroundElement={background.element}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={undo}
+        onRedo={redo}
       />
 
-      <div className="grid grid-cols-[320px_1fr_280px] gap-4 h-full">
-        <LayersPanel
-          layers={layers}
-          selectedId={selectedId}
-          onSelectLayer={setSelectedId}
-          onReorderLayers={reorderLayers}
-        />
+      <div className="grid grid-cols-[320px_1fr_280px_240px] gap-4 h-full">
+        <div className="flex flex-col gap-4">
+          <LayersPanel
+            layers={layers}
+            selectedId={selectedId}
+            onSelectLayer={setSelectedId}
+            onReorderLayers={reorderLayers}
+          />
+          
+          <HistoryPanel
+            timeline={timeline}
+            pointer={pointer}
+            onJumpTo={jumpTo}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={undo}
+            onRedo={redo}
+          />
+        </div>
 
         <div className="border border-neutral-200 rounded relative overflow-hidden" ref={mainRef}>
           <Canvas
