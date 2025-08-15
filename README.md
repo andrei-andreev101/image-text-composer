@@ -13,6 +13,29 @@ A web-based PNG text editor built with Next.js, React, and Konva.js. This applic
 - **Reset**: Clear all data and return to blank state
 - **Export**: Export your design as PNG
 
+## Technologies Used
+
+- **Next.js 14**: React framework for the application structure and routing
+- **React 18**: UI library for building the component-based interface
+- **Konva.js**: 2D canvas library for handling all drawing, text rendering, and interactive transformations
+- **React-Konva**: React bindings for Konva.js, providing declarative canvas components
+- **TypeScript**: Type-safe JavaScript for better development experience
+- **Tailwind CSS**: Utility-first CSS framework for styling
+- **nanoid**: Lightweight unique ID generator for layer management
+
+### Canvas Handling with Konva.js
+
+The editor uses **Konva.js** as the primary canvas library for all drawing and interaction functionality:
+
+- **Text Rendering**: Konva.Text components for displaying and editing text layers
+- **Interactive Transforms**: Konva.Transformer for resizing, rotating, and moving text layers
+- **Multi-Select**: Group transformations with multiple selected nodes
+- **Event Handling**: Mouse and touch interactions for selection and editing
+- **Export Functionality**: High-quality PNG export with proper scaling and positioning
+- **Performance**: Hardware-accelerated rendering for smooth interactions
+
+Konva.js provides the robust canvas foundation that enables all the advanced features like multi-select, group transforms, and real-time text editing.
+
 ### Autosave Feature
 
 The editor automatically saves your current design to the browser's localStorage every 2 seconds after you make changes. This ensures your work is never lost, even if you accidentally close the browser or refresh the page.
