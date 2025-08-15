@@ -4,12 +4,15 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { nanoid } from "nanoid";
 import { useImageObject } from "@/hooks/useImageObject";
 import { useHistory } from "@/hooks/useHistory";
+import { useAutosave } from "@/hooks/useAutosave";
 import type { TextLayer } from "@/types/editor";
 import { Controls } from "./Controls";
 import { LayersPanel } from "./LayersPanel";
 import { Canvas, type CanvasRef } from "./Canvas";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { HistoryPanel } from "./HistoryPanel";
+import { Toast } from "../Toast";
+import { ConfirmDialog } from "../ConfirmDialog";
 
 export default function Editor() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -40,6 +43,44 @@ export default function Editor() {
 
   const [stageScale, setStageScale] = useState(1);
   const [stageSize, setStageSize] = useState({ width: 900, height: 600 });
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("Design autosaved to browser storage");
+  const [toastType, setToastType] = useState<'success' | 'info' | 'warning' | 'error'>('success');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  // Autosave functionality
+  const { loadFromStorage, clearAutosave } = useAutosave(
+    layers,
+    imageUrl,
+    stageSize,
+    stageScale,
+    () => {
+      setToastMessage("Design autosaved to browser storage");
+      setToastType('success');
+      setShowToast(true);
+    } // Show toast when autosave happens
+  );
+
+  // Restore from autosave on component mount
+  useEffect(() => {
+    const savedData = loadFromStorage();
+    if (savedData) {
+      // Restore layers
+      setLayersWithHistory(savedData.layers, "Restore from autosave");
+      
+      // Note: We don't restore the image URL as it might be a blob URL that's no longer valid
+      // The user will need to re-upload their image, but all text layers will be preserved
+      
+      // Restore stage settings
+      setStageSize(savedData.stageSize);
+      setStageScale(savedData.stageScale);
+      
+      // Show a notification if there was a saved image
+      if (savedData.hasImage) {
+        console.log('Autosave: Design restored. Please re-upload your background image to see the complete design.');
+      }
+    }
+  }, []); // Only run on mount
 
   useEffect(() => {
     function fit() {
@@ -187,6 +228,42 @@ export default function Editor() {
     setLayersWithHistory((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)), "Update layer");
   }, [setLayersWithHistory]);
 
+  // Reset editor to blank state
+  const resetEditor = useCallback(() => {
+    setShowResetConfirm(true);
+  }, []);
+
+  // Actually perform the reset
+  const performReset = useCallback(() => {
+    // Clear all layers
+    setLayersWithHistory([], "Reset editor");
+    
+    // Clear selected and editing states
+    setSelectedId(null);
+    setEditingId(null);
+    
+    // Clear background image
+    setImageUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    
+    // Reset stage to default size
+    setStageSize({ width: 900, height: 600 });
+    setStageScale(1);
+    
+    // Clear autosave data
+    clearAutosave();
+    
+    // Close confirmation dialog
+    setShowResetConfirm(false);
+    
+    // Show reset confirmation toast
+    setToastMessage("Editor reset to blank state");
+    setToastType('info');
+    setShowToast(true);
+  }, [setLayersWithHistory, clearAutosave]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -225,6 +302,8 @@ export default function Editor() {
         removeSelected={removeSelected}
         moveLayer={moveLayer}
         exportPNG={exportPNG}
+        clearAutosave={clearAutosave}
+        resetEditor={resetEditor}
         selectedId={selectedId}
         backgroundElement={background.element}
         canUndo={canUndo}
@@ -233,8 +312,8 @@ export default function Editor() {
         onRedo={redo}
       />
 
-      <div className="grid grid-cols-[320px_1fr_280px_240px] gap-4 h-full">
-        <div className="flex flex-col gap-4">
+      <div className="flex gap-4 h-full">
+        <div className="flex flex-col gap-4 w-xs">
           <LayersPanel
             layers={layers}
             selectedId={selectedId}
@@ -253,7 +332,7 @@ export default function Editor() {
           />
         </div>
 
-        <div className="border border-neutral-200 rounded relative overflow-hidden" ref={mainRef}>
+        <div className="border flex-1 border-neutral-200 rounded relative overflow-hidden" ref={mainRef}>
           <Canvas
             ref={canvasRef}
             background={background}
@@ -273,6 +352,25 @@ export default function Editor() {
           onUpdateLayer={(updates) => selectedId && updateLayer(selectedId, updates)}
         />
       </div>
+      
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+        />
+      )}
+      
+      <ConfirmDialog
+        isOpen={showResetConfirm}
+        title="Reset Editor"
+        message="This will clear all layers, remove the background image, and reset the editor to a blank state. This action cannot be undone."
+        confirmText="Reset Editor"
+        cancelText="Cancel"
+        onConfirm={performReset}
+        onCancel={() => setShowResetConfirm(false)}
+        type="danger"
+      />
     </div>
   );
 }

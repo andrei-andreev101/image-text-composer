@@ -7,6 +7,8 @@ interface ControlsProps {
   removeSelected: () => void;
   moveLayer: (id: string, dir: "up" | "down" | "top" | "bottom") => void;
   exportPNG: () => void;
+  clearAutosave: () => void;
+  resetEditor: () => void;
   selectedId: string | null;
   backgroundElement: HTMLImageElement | null;
   canUndo: boolean;
@@ -21,6 +23,8 @@ export function Controls({
   addTextLayer,
   removeSelected,
   exportPNG,
+  clearAutosave,
+  resetEditor,
   selectedId,
   backgroundElement,
   canUndo,
@@ -29,7 +33,8 @@ export function Controls({
   onRedo
 }: ControlsProps) {
   return (
-    <div className="flex w-full gap-3 items-center">
+    <div className="flex w-full gap-3 items-center justify-between">
+      <div className="flex gap-3 items-center">
       <input
         ref={fileInputRef}
         type="file"
@@ -90,6 +95,32 @@ export function Controls({
       >
         Export PNG
       </button>
+      
+      <div className="h-6 w-px bg-neutral-300" />
+      
+      <button
+        className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+        onClick={clearAutosave}
+        title="Clear autosaved design data"
+      >
+        Clear Autosave
+      </button>
+      
+      <div className="h-6 w-px bg-neutral-300" />
+      
+      <button
+        className="px-3 py-2 rounded bg-orange-600 text-white hover:bg-orange-700"
+        onClick={resetEditor}
+        title="Reset editor to blank state"
+      >
+        Reset Editor
+      </button>
+      </div>
+      
+      <div className="flex items-center gap-2 text-sm text-neutral-600">
+        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <span>Autosave active</span>
+      </div>
     </div>
   );
 }

@@ -17,7 +17,7 @@ export function PropertiesPanel({ selectedLayer, onUpdateLayer }: PropertiesPane
   }
 
   return (
-    <div className="border border-neutral-200 rounded p-3 overflow-auto">
+    <div className="border border-neutral-200 rounded p-3 overflow-auto w-64">
       <div className="font-medium mb-2">Properties</div>
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">

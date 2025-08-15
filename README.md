@@ -1,3 +1,38 @@
+# PNG Text Editor
+
+A web-based PNG text editor built with Next.js, React, and Konva.js. This application allows you to add text layers to PNG images with full editing capabilities.
+
+## Features
+
+- **Image Upload**: Upload PNG images as backgrounds
+- **Text Layers**: Add, edit, and style text layers
+- **Layer Management**: Reorder, move, and delete layers
+- **History**: Full undo/redo functionality with keyboard shortcuts
+- **Autosave**: Automatically save your design to browser's localStorage
+- **Reset**: Clear all data and return to blank state
+- **Export**: Export your design as PNG
+
+### Autosave Feature
+
+The editor automatically saves your current design to the browser's localStorage every 2 seconds after you make changes. This ensures your work is never lost, even if you accidentally close the browser or refresh the page.
+
+- **Automatic**: Saves layers, positions, and styling automatically
+- **Restore**: When you reopen the editor, your design is automatically restored
+- **Clear**: Use the "Clear Autosave" button to remove saved data
+- **Reset**: Use the "Reset Editor" button to clear everything and start fresh
+- **Visual Feedback**: Toast notifications confirm when autosave occurs
+
+**Note**: Due to browser security restrictions, background images are not saved with the design. You'll need to re-upload your background image after restoring, but all text layers and their properties will be preserved.
+
+### Reset Feature
+
+The reset functionality allows you to completely clear the editor and start with a blank canvas:
+
+- **Complete Reset**: Removes all text layers, background image, and clears localStorage
+- **Confirmation Dialog**: Prevents accidental resets with a confirmation dialog
+- **Fresh Start**: Returns the editor to its initial blank state
+- **Visual Feedback**: Toast notification confirms the reset action
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
